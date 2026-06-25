@@ -13,17 +13,16 @@ import org.libpag.PAGView
 import org.libpag.PAGScaleMode as AndroidPagScaleMode
 
 @Composable
-fun PagView(
+actual fun PagView(
     bytes: ByteArray,
-    modifier: Modifier = Modifier,
-    isPlaying: Boolean = true,
-    progress: Double? = null,
-    repeatCount: Int = 0,
-    scaleMode: PagScaleMode = PagScaleMode.LetterBox,
-    cacheEnabled: Boolean = true,
-    videoEnabled: Boolean = true,
-    useDiskCache: Boolean = false,
-    onViewCreated: (PAGView) -> Unit = {},
+    modifier: Modifier,
+    isPlaying: Boolean,
+    progress: Double?,
+    repeatCount: Int,
+    scaleMode: PagScaleMode,
+    cacheEnabled: Boolean,
+    videoEnabled: Boolean,
+    useDiskCache: Boolean,
 ) {
     val composition = remember(bytes) { AndroidPagComposition(loadAndroidPagFile(bytes)) }
     DisposableEffect(composition) {
@@ -39,22 +38,20 @@ fun PagView(
         cacheEnabled = cacheEnabled,
         videoEnabled = videoEnabled,
         useDiskCache = useDiskCache,
-        onViewCreated = onViewCreated,
     )
 }
 
 @Composable
-fun PagView(
+actual fun PagView(
     composition: PagComposition,
-    modifier: Modifier = Modifier,
-    isPlaying: Boolean = true,
-    progress: Double? = null,
-    repeatCount: Int = 0,
-    scaleMode: PagScaleMode = PagScaleMode.LetterBox,
-    cacheEnabled: Boolean = true,
-    videoEnabled: Boolean = true,
-    useDiskCache: Boolean = false,
-    onViewCreated: (PAGView) -> Unit = {},
+    modifier: Modifier,
+    isPlaying: Boolean,
+    progress: Double?,
+    repeatCount: Int,
+    scaleMode: PagScaleMode,
+    cacheEnabled: Boolean,
+    videoEnabled: Boolean,
+    useDiskCache: Boolean,
 ) {
     val androidComposition = composition.asAndroidPagComposition()
     var pagView by remember { mutableStateOf<PAGView?>(null) }
@@ -73,7 +70,6 @@ fun PagView(
             PAGView(context).apply {
                 pagView = this
                 setComposition(androidComposition.nativeComposition)
-                onViewCreated(this)
             }
         },
         update = { view ->

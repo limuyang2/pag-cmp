@@ -34,15 +34,13 @@ kotlin {
        namespace = "io.github.limuyang2.myapplication.shared"
        compileSdk = libs.versions.android.compileSdk.get().toInt()
        minSdk = libs.versions.android.minSdk.get().toInt()
-    
-       compilerOptions {
-           jvmTarget = JvmTarget.JVM_11
-       }
+
        androidResources {
            enable = true
        }
-       withHostTest {
-           isIncludeAndroidResources = true
+
+       compilerOptions {
+           jvmTarget = JvmTarget.JVM_11
        }
     }
     
@@ -59,6 +57,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(project(":lib-pag-cmp"))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

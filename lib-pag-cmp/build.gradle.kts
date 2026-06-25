@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
@@ -27,6 +29,15 @@ kotlin {
 
     jvm()
 
+    js {
+        browser()
+    }
+
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+    }
+
     // For iOS targets, this is also where you should
     // configure native binary output. For more information, see:
     // https://kotlinlang.org/docs/multiplatform-build-native-binaries.html#build-xcframeworks
@@ -46,6 +57,15 @@ kotlin {
         binaries.framework {
             baseName = xcfName
         }
+    }
+
+    swiftPMDependencies {
+        discoverClangModulesImplicitly = false
+        swiftPackage(
+            url = url("https://github.com/libpag/pag-ios.git"),
+            version = exact("4.5.70"),
+            products = listOf(product("libpag")),
+        )
     }
 
     // Source set declarations.
