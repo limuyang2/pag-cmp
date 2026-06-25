@@ -18,6 +18,7 @@ material3 = "1.11.0-alpha07"
 kotlinStdlib = "2.4.0"
 runner = "1.7.0"
 core = "1.7.0"
+libpag = "4.5.70"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -42,6 +43,7 @@ wrappers-browser = { module = "org.jetbrains.kotlin-wrappers:kotlin-browser", ve
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlinStdlib" }
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
+libpag = { module = "com.tencent.tav:libpag", version.ref = "libpag" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
