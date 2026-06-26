@@ -1,46 +1,156 @@
-This is a Kotlin Multiplatform project targeting Android, iOS, Web, Desktop (JVM).
+# lib-pag-cmp
 
-* [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+`lib-pag-cmp` is a Compose Multiplatform wrapper for Tencent [libpag](https://github.com/Tencent/libpag).
+It provides a common `PagView` composable and platform implementations for rendering PAG animation files.
 
-* [/shared](./shared/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./shared/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./shared/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./shared/src/jvmMain/kotlin)
-    folder is the appropriate location.
+[中文说明](./README_CN.md)
 
-### Running the apps
+## Status
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+| Platform | Status | Rendering path |
+| --- | --- | --- |
+| Android | Supported | Native `org.libpag.PAGView` through `AndroidView` |
+| iOS | Supported | Native `PAGView` through `UIKitView` |
+| JVM Desktop | Supported on macOS arm64 | libpag offscreen render -> pixels -> Compose `ImageBitmap` |
+| WasmJS | Supported | libpag Web SDK canvas integration |
+| JS | Compile-only stub | Not published as a supported artifact |
+| macOS Kotlin/Native | Not supported | Compose macOS does not currently expose a public `NSView` wrapper |
 
-- Android app: `./gradlew :androidApp:assembleDebug`
-- Desktop app:
-  - Hot reload: `./gradlew :desktopApp:hotRun --auto`
-  - Standard run: `./gradlew :desktopApp:run`
-- Web app:
-  - Wasm target (faster, modern browsers): `./gradlew :webApp:wasmJsBrowserDevelopmentRun`
-  - JS target (slower, supports older browsers): `./gradlew :webApp:jsBrowserDevelopmentRun`
-- iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+The JVM artifact currently bundles native runtime files only for `macos-arm64`.
+Linux and Windows JVM native packages are not included yet.
 
-### Running tests
+## Installation
 
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
+Add the repository that contains the published artifacts, then depend on the common KMP artifact:
 
-- Android tests: `./gradlew :shared:testAndroidHostTest`
-- Desktop tests: `./gradlew :shared:jvmTest`
-- Web tests:
-  - Wasm target: `./gradlew :shared:wasmJsTest`
-  - JS target: `./gradlew :shared:jsTest`
-- iOS tests: `./gradlew :shared:iosSimulatorArm64Test`
+```kotlin
+repositories {
+    mavenCentral()
+}
 
----
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation("io.github.limuyang2:lib-pag-cmp:0.1.0")
+        }
+    }
+}
+```
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com.cn/en-us/help/kotlin-multiplatform-dev/get-started.html),
-[Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform),
-[Kotlin/Wasm](https://kotl.in/wasm/)…
+Platform publications are produced as:
 
-We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
-If you face any issues, please report them on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
+- `io.github.limuyang2:lib-pag-cmp`
+- `io.github.limuyang2:lib-pag-cmp-android`
+- `io.github.limuyang2:lib-pag-cmp-jvm`
+- `io.github.limuyang2:lib-pag-cmp-wasm-js`
+- `io.github.limuyang2:lib-pag-cmp-ios-arm64`
+- `io.github.limuyang2:lib-pag-cmp-ios-simulator-arm64`
+
+There is no supported `lib-pag-cmp-js` artifact.
+
+## Basic Usage
+
+Load a PAG file as bytes and pass it to `PagView`:
+
+```kotlin
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import io.github.limuyang2.libpag.cmp.PagScaleMode
+import io.github.limuyang2.libpag.cmp.PagView
+
+@Composable
+fun LoadingAnimation(bytes: ByteArray) {
+    PagView(
+        bytes = bytes,
+        modifier = Modifier.size(160.dp),
+        isPlaying = true,
+        repeatCount = 0,
+        scaleMode = PagScaleMode.LetterBox,
+    )
+}
+```
+
+For repeated rendering of the same file, load a composition once and pass it to `PagView`:
+
+```kotlin
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import io.github.limuyang2.libpag.cmp.Pag
+import io.github.limuyang2.libpag.cmp.PagView
+
+@Composable
+fun ReusedAnimation(bytes: ByteArray) {
+    val composition = remember(bytes) { Pag.load(bytes) }
+
+    DisposableEffect(composition) {
+        onDispose { composition.close() }
+    }
+
+    PagView(composition = composition)
+}
+```
+
+## Parameters
+
+`PagView` exposes the same common parameters on every supported platform:
+
+- `isPlaying`: starts or pauses playback.
+- `progress`: optional manual progress in `0.0..1.0`. When set while paused, the current frame is flushed.
+- `repeatCount`: native libpag repeat count. `0` means infinite repeat.
+- `scaleMode`: controls how PAG content fits inside the render area.
+- `cacheEnabled`: enables libpag render cache.
+- `videoEnabled`: enables video sequence rendering when the PAG file contains video content.
+- `useDiskCache`: enables libpag disk cache on platforms that expose it.
+
+`scaleMode` only affects the content transform inside the native PAG renderer. It does not measure,
+resize, or otherwise affect the Compose `PagView` layout bounds.
+
+## Scale Modes
+
+- `None`: keeps the composition at its original size and position.
+- `Stretch`: scales width and height independently to fill the render area. Content may be distorted.
+- `LetterBox`: scales uniformly until the whole composition is visible. Empty space may remain on one axis.
+- `Zoom`: scales uniformly until the render area is fully covered. Content may be cropped on one axis.
+
+## Web Runtime
+
+The WasmJS implementation expects the libpag Web SDK to be loaded before the Compose app starts.
+The project demo loads the bundled SDK resources from the web app.
+
+If your app hosts the library differently, make sure `libpag.min.js` and its wasm runtime are available
+before `webApp.js` executes.
+
+## JVM Runtime
+
+The JVM implementation uses a JNI bridge and bundled native libpag runtime files. At runtime, the library
+extracts those files from the jar and loads them with `System.load()`.
+
+For local debugging, external native files can be supplied with JVM system properties:
+
+```shell
+-Dlibpag.cmp.libpag=/path/to/libpag
+-Dlibpag.cmp.bridge=/path/to/libpag_cmp_jvm.dylib
+```
+
+See [BUILD.md](./BUILD.md) for details about rebuilding and replacing JVM native artifacts.
+
+## Build Checks
+
+Useful verification commands:
+
+```shell
+./gradlew :lib-pag-cmp:compileAndroidMain
+./gradlew :lib-pag-cmp:compileKotlinIosArm64
+./gradlew :lib-pag-cmp:compileKotlinIosSimulatorArm64
+./gradlew :lib-pag-cmp:compileKotlinJvm
+./gradlew :lib-pag-cmp:compileKotlinWasmJs
+```
+
+Publication metadata can be checked with:
+
+```shell
+./gradlew :lib-pag-cmp:generatePomFileForWasmJsPublication
+```
