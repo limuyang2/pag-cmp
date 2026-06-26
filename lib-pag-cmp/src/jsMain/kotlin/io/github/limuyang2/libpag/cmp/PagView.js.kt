@@ -211,6 +211,9 @@ private fun PagScaleMode.toWebScaleMode(): Int = when (this) {
         return previous
           .then(() => PAG.PAGFile.load(data.buffer))
           .then((pagFile) => {
+            if (!pagFile) {
+              throw new Error("PAGFile.load() returned empty result.");
+            }
             return PAG.PAGView.init(pagFile, canvas, { firstFrame: true, useScale: false })
               .then((pagView) => {
                 canvas[stateKey] = { file: pagFile, view: pagView };
@@ -348,7 +351,28 @@ private external fun pagDestroy(canvas: HTMLCanvasElement)
 
 @JsFun(
     """
-    (path) => fetch(path).then((res) => {
+    (path) => {
+      const normalizePagUrl = (value) => {
+        const url = new URL(value, globalThis.location.href);
+        const parts = url.pathname.split("/").filter(Boolean);
+        if (url.hostname === "github.com" && parts.length > 4 && parts[2] === "raw") {
+          const owner = parts[0];
+          const repo = parts[1];
+          let ref;
+          let fileStart;
+          if (parts[3] === "refs" && parts[4] === "heads" && parts.length > 6) {
+            ref = parts[5];
+            fileStart = 6;
+          } else {
+            ref = parts[3];
+            fileStart = 4;
+          }
+          return "https://raw.githubusercontent.com/" + owner + "/" + repo + "/" + ref + "/" + parts.slice(fileStart).join("/");
+        }
+        return url.toString();
+      };
+      const fetchPath = normalizePagUrl(path);
+      return fetch(fetchPath, { mode: "cors", redirect: "follow" }).then((res) => {
       if (!res.ok) throw new Error("Failed to fetch PAG: " + res.status + " " + res.statusText);
       return res.arrayBuffer();
     }).then((buffer) => {
@@ -356,7 +380,11 @@ private external fun pagDestroy(canvas: HTMLCanvasElement)
       globalThis.__pag_cmp_path_cache = globalThis.__pag_cmp_path_cache || {};
       globalThis.__pag_cmp_path_cache[path] = bytes;
       return bytes.length;
-    })
+    }).catch((error) => {
+      console.error("PagView: failed to fetch PAG from path:", path, "normalized:", fetchPath, error);
+      throw error;
+    });
+    }
     """
 )
 private external fun fetchPagPathBytes(path: String): Promise<Int>
