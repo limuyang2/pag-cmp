@@ -136,16 +136,45 @@ private data class BundledJvmNative(
     }
 }
 
-internal fun ByteArray.toImageBitmap(width: Int, height: Int): ImageBitmap {
-    val bitmap = Bitmap()
-    bitmap.allocPixels(
-        ImageInfo(
-            width = width,
-            height = height,
-            colorType = ColorType.BGRA_8888,
-            alphaType = ColorAlphaType.PREMUL,
-        )
-    )
-    check(bitmap.installPixels(this)) { "Failed to install PAG pixels into Skia bitmap." }
-    return bitmap.asComposeImageBitmap()
+internal class JvmPagFrameBuffer {
+    private var size: PagSize? = null
+    private var pixels = ByteArray(0)
+    private var bitmap: Bitmap? = null
+    private var imageBitmap: ImageBitmap? = null
+
+    fun pixelsFor(size: PagSize): ByteArray {
+        ensureAllocated(size)
+        return pixels
+    }
+
+    fun updateImage(size: PagSize): ImageBitmap {
+        ensureAllocated(size)
+        val currentBitmap = requireNotNull(bitmap)
+        check(currentBitmap.installPixels(pixels)) {
+            "Failed to install PAG pixels into Skia bitmap."
+        }
+        return requireNotNull(imageBitmap)
+    }
+
+    private fun ensureAllocated(newSize: PagSize) {
+        if (size == newSize) return
+
+        size = newSize
+        pixels = ByteArray(newSize.width * newSize.height * BytesPerPixel)
+        bitmap = Bitmap().apply {
+            allocPixels(
+                ImageInfo(
+                    width = newSize.width,
+                    height = newSize.height,
+                    colorType = ColorType.BGRA_8888,
+                    alphaType = ColorAlphaType.PREMUL,
+                )
+            )
+        }
+        imageBitmap = requireNotNull(bitmap).asComposeImageBitmap()
+    }
+
+    private companion object {
+        const val BytesPerPixel = 4
+    }
 }

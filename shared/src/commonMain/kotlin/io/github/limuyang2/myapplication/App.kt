@@ -31,18 +31,18 @@ import pagcmp.shared.generated.resources.Res
 @Preview
 fun App() {
     MaterialTheme {
-        var pagBytes by remember { mutableStateOf<ByteArray?>(null) }
-        var errorMessage by remember { mutableStateOf<String?>(null) }
+        var pagSamples by remember { mutableStateOf(PagSample.defaults()) }
 
         LaunchedEffect(Unit) {
-            runCatching { Res.readBytes("files/8.pag") }
-                .onSuccess { bytes -> pagBytes = bytes }
-                .onFailure { throwable ->
-                    errorMessage = when (throwable) {
-                        is MissingResourceException -> "PAG resource not found"
-                        else -> throwable.message ?: throwable::class.simpleName ?: "Failed to load PAG"
-                    }
-                }
+            pagSamples = pagSamples.map { sample ->
+                runCatching { Res.readBytes(sample.resourcePath) }
+                    .fold(
+                        onSuccess = { bytes -> sample.copy(bytes = bytes, errorMessage = null) },
+                        onFailure = { throwable ->
+                            sample.copy(errorMessage = throwable.toPagLoadError())
+                        },
+                    )
+            }
         }
 
         Column(
@@ -59,18 +59,56 @@ fun App() {
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
             )
-            Text(
-                text = "home_ai-float.pag",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            PagPreview(
-                bytes = pagBytes,
-                errorMessage = errorMessage,
-            )
+            pagSamples.forEach { sample ->
+                PagSamplePreview(sample)
+            }
         }
     }
 }
+
+@Composable
+private fun PagSamplePreview(sample: PagSample) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = sample.name,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        PagPreview(
+            bytes = sample.bytes,
+            errorMessage = sample.errorMessage,
+        )
+    }
+}
+
+private data class PagSample(
+    val name: String,
+    val resourcePath: String,
+    val bytes: ByteArray? = null,
+    val errorMessage: String? = null,
+) {
+    companion object {
+        fun defaults(): List<PagSample> = listOf(
+            PagSample(
+                name = "8.pag",
+                resourcePath = "files/8.pag",
+            ),
+            PagSample(
+                name = "loading_bmp.pag",
+                resourcePath = "files/loading_bmp.pag",
+            ),
+        )
+    }
+}
+
+private fun Throwable.toPagLoadError(): String =
+    when (this) {
+        is MissingResourceException -> "PAG resource not found"
+        else -> message ?: this::class.simpleName ?: "Failed to load PAG"
+    }
 
 @Composable
 private fun PagPreview(

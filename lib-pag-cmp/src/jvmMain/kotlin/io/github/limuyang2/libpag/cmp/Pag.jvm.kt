@@ -36,8 +36,7 @@ internal class JvmPagPlayer(
     private val handle: Long,
 ) : PagPlayer {
     private var closed = false
-    private var surfaceSize: PagSize? = null
-    private var pixelBuffer = ByteArray(0)
+    private val frameBuffer = JvmPagFrameBuffer()
 
     override var composition: PagComposition? = null
         set(value) {
@@ -74,17 +73,17 @@ internal class JvmPagPlayer(
     override fun render(size: PagSize): ImageBitmap {
         check(!closed) { "PagPlayer is closed." }
         requireComposition()
-        ensureBuffer(size)
+        val pixels = frameBuffer.pixelsFor(size)
         val rendered = JvmPagNative.renderToBgra(
             playerHandle = handle,
             width = size.width,
             height = size.height,
             progress = progress,
             scaleMode = scaleMode.ordinal,
-            pixels = pixelBuffer,
+            pixels = pixels,
         )
         check(rendered) { "Failed to render PAG frame." }
-        return pixelBuffer.toImageBitmap(size.width, size.height)
+        return frameBuffer.updateImage(size)
     }
 
     override fun close() {
@@ -94,16 +93,6 @@ internal class JvmPagPlayer(
         }
     }
 
-    private fun ensureBuffer(size: PagSize) {
-        if (surfaceSize != size || pixelBuffer.size != size.width * size.height * BytesPerPixel) {
-            surfaceSize = size
-            pixelBuffer = ByteArray(size.width * size.height * BytesPerPixel)
-        }
-    }
-
-    private companion object {
-        const val BytesPerPixel = 4
-    }
 }
 
 private fun PagComposition.asJvmPagComposition(): JvmPagComposition =

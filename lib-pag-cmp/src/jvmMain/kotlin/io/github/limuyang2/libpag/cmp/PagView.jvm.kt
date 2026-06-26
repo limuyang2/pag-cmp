@@ -68,7 +68,7 @@ actual fun PagView(
     val currentProgress by rememberUpdatedState(progress)
     val currentRepeatCount by rememberUpdatedState(repeatCount)
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
-    var frame by remember { mutableStateOf<ImageBitmap?>(null) }
+    var frame by remember { mutableStateOf<JvmPagRenderedFrame?>(null) }
     var playbackStartNanos by remember { mutableStateOf<Long?>(null) }
     var completedLoops by remember { mutableStateOf(0) }
 
@@ -101,9 +101,13 @@ actual fun PagView(
         if (width <= 0 || height <= 0) return@LaunchedEffect
 
         val renderSize = PagSize(width, height)
+        var nextFrameVersion = 0
         fun render(progressValue: Double) {
             player.progress = progressValue
-            frame = player.render(renderSize)
+            frame = JvmPagRenderedFrame(
+                image = player.render(renderSize),
+                version = nextFrameVersion++,
+            )
         }
 
         if (!currentIsPlaying) {
@@ -145,11 +149,16 @@ actual fun PagView(
             .fillMaxSize()
             .onSizeChanged { canvasSize = it },
     ) {
-        frame?.let { image ->
-            drawPagImage(image, scaleMode)
+        frame?.let { renderedFrame ->
+            drawPagImage(renderedFrame.image, scaleMode)
         }
     }
 }
+
+private data class JvmPagRenderedFrame(
+    val image: ImageBitmap,
+    val version: Int,
+)
 
 private fun PagPlayer.asJvmPagPlayer(): JvmPagPlayer =
     this as? JvmPagPlayer
