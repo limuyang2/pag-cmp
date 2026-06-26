@@ -72,7 +72,9 @@ fun LoadingAnimation(bytes: ByteArray) {
 }
 ```
 
-上面的示例直接接收 `bytes`。要播放本地 `.pag` 文件，把它放到
+上面的示例直接接收 `bytes`。这是最通用的加载方式，当前所有支持平台都可用。
+
+要播放本地 `.pag` 文件，把它放到
 `src/commonMain/composeResources/files/` 下，再用 Compose Multiplatform 资源 API
 （`org.jetbrains.compose.components:components-resources`）读取——这套方式在所有平台都通用：
 
@@ -129,8 +131,19 @@ fun RemoteAnimation(url: String) {
 }
 ```
 
-`path` 在所有平台都支持本地文件路径；网络 URL（`http`/`https`）在 Android、JS、WasmJS 上支持
-（JVM 通过 JDK 下载；iOS 网络支持为 best-effort）。
+`path` 支持平台可访问的本地路径，也支持 `http`/`https` 网络 URL。对于 Compose resources，
+JVM/JS/WasmJS/iOS 可以使用 `Res.getUri("files/name.pag")`；Android 如果走原生 libpag
+path loader，则使用 `assets://` 形式。当前 demo 里已经封装了这部分平台差异。
+
+网络 URL 的行为与平台有关：
+
+- Android 使用 libpag 原生 path loader。
+- JVM 通过 JDK 下载，再复用 bytes 渲染路径。
+- JS 和 WasmJS 使用浏览器 `fetch`，远端地址必须能被浏览器访问，并且满足 CORS。
+- iOS 使用 libpag 原生 path loader，网络加载为 best-effort。
+
+如果 PAG 文件托管在 GitHub，推荐使用 `raw.githubusercontent.com` 直链。Web 实现也会把常见的
+`github.com/.../raw/...` 链接规范化后再发起 fetch。
 
 在 Android、iOS 和 JVM 上，如果同一个 PAG 文件会反复渲染，可以先加载 `PagComposition`，
 再传给 `PagView`：
@@ -154,7 +167,17 @@ fun ReusedAnimation(bytes: ByteArray) {
 }
 ```
 
-JS 和 WasmJS 当前支持的 Web 路径是 `PagView(bytes)`。
+JS 和 WasmJS 当前支持 `PagView(bytes)` 和 `PagView(path)`。`PagView(composition)` 暂不支持 Web target。
+
+## Demo
+
+当前 demo 验证三种加载路径：
+
+- `ByteArray`：`Res.readBytes("files/8.pag")` -> `PagView(bytes)`。
+- `Local path`：平台特定的本地资源 path/URI -> `PagView(path)`。
+- `Network URL`：远端 PAG URL -> `PagView(path)`。
+
+样例使用可滚动的 `FlowRow` 布局展示，后续扩展只需要在 demo 数据里继续追加新的 `PagSample`。
 
 ## 参数说明
 
@@ -180,11 +203,12 @@ JS 和 WasmJS 当前支持的 Web 路径是 `PagView(bytes)`。
 
 ## Web 运行时
 
-JS 和 WasmJS 实现要求 libpag Web SDK 在 Compose app 启动前加载完成。
-当前 demo 会从 web app 里加载打包的 SDK 资源。
+JS 和 WasmJS 通过 libpag Web SDK 渲染到覆盖在 Compose 占位区域上的 DOM canvas。
+当前 demo 把 SDK 文件打包在 `webApp/src/webMain/resources/pag/` 下，并按需加载
+`pag/libpag-bootstrap.js`。
 
-如果业务 app 使用自己的托管方式，需要确保 `libpag.min.js` 以及对应 wasm runtime
-在 `webApp.js` 执行前可用。
+如果业务 app 使用自己的托管方式，需要确保 libpag Web SDK 的 JavaScript 和 wasm runtime
+能被页面访问到。浏览器加载网络 PAG 时遵循普通 Web 规则：URL 必须可访问，并且需要通过 CORS。
 
 ## JVM 运行时
 

@@ -72,7 +72,10 @@ fun LoadingAnimation(bytes: ByteArray) {
 }
 ```
 
-The example above receives raw `bytes`. To play a local `.pag` file, drop it under
+The example above receives raw `bytes`. This is the most portable loading mode and works on
+all supported targets.
+
+To play a local `.pag` file, drop it under
 `src/commonMain/composeResources/files/` and read it with the Compose Multiplatform
 resource API (`org.jetbrains.compose.components:components-resources`) — the same
 path works on every target:
@@ -130,8 +133,21 @@ fun RemoteAnimation(url: String) {
 }
 ```
 
-`path` accepts a local file path on every target, and an `http`/`https` URL on Android, JS, and
-WasmJS (JVM downloads it via the JDK; iOS network support is best-effort).
+`path` accepts platform-accessible local paths and `http`/`https` URLs. For Compose resources,
+use `Res.getUri("files/name.pag")` on JVM/JS/WasmJS/iOS, or Android's `assets://` path form
+when targeting the native Android libpag loader. The bundled demo contains platform helpers for
+that mapping.
+
+Network URL behavior is platform-dependent:
+
+- Android uses libpag's native path loader.
+- JVM downloads through the JDK and then renders from bytes.
+- JS and WasmJS use browser `fetch`, so the remote server must be reachable from the browser and
+  allow cross-origin access.
+- iOS uses libpag's native path loader; network loading is best-effort.
+
+For GitHub-hosted PAG files, prefer `raw.githubusercontent.com` URLs. The Web implementation also
+normalizes common `github.com/.../raw/...` links before fetching.
 
 On Android, iOS, and JVM, repeated rendering of the same file can load a composition once and pass
 it to `PagView`:
@@ -155,7 +171,19 @@ fun ReusedAnimation(bytes: ByteArray) {
 }
 ```
 
-The JS and WasmJS implementations currently use `PagView(bytes)` as the supported Web path.
+JS and WasmJS support both `PagView(bytes)` and `PagView(path)`. `PagView(composition)` is not
+supported on Web targets yet.
+
+## Demo
+
+The demo app validates three loading paths:
+
+- `ByteArray`: `Res.readBytes("files/8.pag")` -> `PagView(bytes)`.
+- `Local path`: platform-specific local resource path/URI -> `PagView(path)`.
+- `Network URL`: remote PAG URL -> `PagView(path)`.
+
+Samples are displayed in a scrollable `FlowRow`, so adding more cases only requires appending a
+new `PagSample` entry in the demo data.
 
 ## Parameters
 
@@ -181,11 +209,13 @@ resize, or otherwise affect the Compose `PagView` layout bounds.
 
 ## Web Runtime
 
-The JS and WasmJS implementations expect the libpag Web SDK to be loaded before the Compose app starts.
-The project demo loads the bundled SDK resources from the web app.
+The JS and WasmJS implementations render through the libpag Web SDK on an overlay canvas. The demo
+bundles the SDK files under `webApp/src/webMain/resources/pag/` and loads `pag/libpag-bootstrap.js`
+on demand.
 
-If your app hosts the library differently, make sure `libpag.min.js` and its wasm runtime are available
-before `webApp.js` executes.
+If your app hosts the library differently, make sure the libpag Web SDK JavaScript and wasm runtime
+are available at the paths used by your app. Browser network loading is subject to normal web rules:
+the URL must be reachable from the page and must pass CORS checks.
 
 ## JVM Runtime
 
