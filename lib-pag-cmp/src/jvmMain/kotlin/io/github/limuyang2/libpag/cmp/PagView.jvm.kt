@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.max
 
 @Composable
@@ -160,3 +162,50 @@ private data class JvmPagRenderedFrame(
 private fun PagPlayer.asJvmPagPlayer(): JvmPagPlayer =
     this as? JvmPagPlayer
         ?: error("JVM PagView requires a player created by Pag.createPlayer() on JVM.")
+
+@Composable
+actual fun PagView(
+    path: String,
+    modifier: Modifier,
+    isPlaying: Boolean,
+    progress: Double?,
+    repeatCount: Int,
+    scaleMode: PagScaleMode,
+    cacheEnabled: Boolean,
+    videoEnabled: Boolean,
+    useDiskCache: Boolean,
+) {
+    // Read the local file (or download the http(s) URL via the JDK) into bytes, then reuse the
+    // existing PagView(bytes) renderer. Loading is async; nothing renders until bytes are ready.
+    var bytes by remember(path) { mutableStateOf<ByteArray?>(null) }
+    LaunchedEffect(path) {
+        bytes = runCatching { readPagPathBytes(path) }.getOrElse {
+            println("PagView: failed to load PAG from path: $path")
+            null
+        }
+    }
+    bytes?.let {
+        PagView(
+            bytes = it,
+            modifier = modifier,
+            isPlaying = isPlaying,
+            progress = progress,
+            repeatCount = repeatCount,
+            scaleMode = scaleMode,
+            cacheEnabled = cacheEnabled,
+            videoEnabled = videoEnabled,
+            useDiskCache = useDiskCache,
+        )
+    }
+}
+
+private suspend fun readPagPathBytes(path: String): ByteArray =
+    withContext(Dispatchers.IO) {
+        when {
+            path.startsWith("http://") || path.startsWith("https://") || path.startsWith("file:") || path.startsWith("jar:") -> {
+                java.net.URI.create(path).toURL().openStream().use { it.readBytes() }
+            }
+
+            else -> java.io.File(path).readBytes()
+        }
+    }

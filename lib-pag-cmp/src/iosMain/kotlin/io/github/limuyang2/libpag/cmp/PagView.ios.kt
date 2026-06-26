@@ -2,7 +2,11 @@ package io.github.limuyang2.libpag.cmp
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
@@ -66,20 +70,7 @@ actual fun PagView(
         modifier = modifier,
         update = { view ->
             view.setComposition(iosComposition.nativeComposition)
-            view.setRepeatCount(repeatCount)
-            view.setScaleMode(scaleMode.toIosPagScaleMode())
-            view.setCacheEnabled(cacheEnabled)
-            view.setVideoEnabled(videoEnabled)
-            view.setUseDiskCache(useDiskCache)
-            progress?.let { view.setProgress(it.coerceIn(0.0, 1.0)) }
-            if (isPlaying) {
-                view.play()
-            } else {
-                view.pause()
-                if (progress != null) {
-                    view.flush()
-                }
-            }
+            view.applyPagViewState(isPlaying, progress, repeatCount, scaleMode, cacheEnabled, videoEnabled, useDiskCache)
         },
         onRelease = { view ->
             view.stop()
@@ -102,4 +93,75 @@ private fun PagScaleMode.toIosPagScaleMode() = when (this) {
     PagScaleMode.Stretch -> PAGScaleModeStretch
     PagScaleMode.LetterBox -> PAGScaleModeLetterBox
     PagScaleMode.Zoom -> PAGScaleModeZoom
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun PAGView.applyPagViewState(
+    isPlaying: Boolean,
+    progress: Double?,
+    repeatCount: Int,
+    scaleMode: PagScaleMode,
+    cacheEnabled: Boolean,
+    videoEnabled: Boolean,
+    useDiskCache: Boolean,
+) {
+    setRepeatCount(repeatCount)
+    setScaleMode(scaleMode.toIosPagScaleMode())
+    setCacheEnabled(cacheEnabled)
+    setVideoEnabled(videoEnabled)
+    setUseDiskCache(useDiskCache)
+    progress?.let { setProgress(it.coerceIn(0.0, 1.0)) }
+    if (isPlaying) {
+        play()
+    } else {
+        pause()
+        if (progress != null) {
+            flush()
+        }
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+@Composable
+actual fun PagView(
+    path: String,
+    modifier: Modifier,
+    isPlaying: Boolean,
+    progress: Double?,
+    repeatCount: Int,
+    scaleMode: PagScaleMode,
+    cacheEnabled: Boolean,
+    videoEnabled: Boolean,
+    useDiskCache: Boolean,
+) {
+    // libpag's PAGView loads a local path (and a network URL on a best-effort basis) natively via
+    // setPathAsync, so we skip the bytes/composition path entirely.
+    var pagView by remember { mutableStateOf<PAGView?>(null) }
+
+    LaunchedEffect(path, pagView) {
+        val view = pagView ?: return@LaunchedEffect
+        view.setPathAsync(filePath = path, completionBlock = { pagFile ->
+            if (pagFile == null) {
+                println("PagView: failed to load PAG from path: $path")
+            }
+        })
+    }
+
+    UIKitView(
+        factory = {
+            PAGView().apply { pagView = this }
+        },
+        modifier = modifier,
+        update = { view ->
+            view.applyPagViewState(isPlaying, progress, repeatCount, scaleMode, cacheEnabled, videoEnabled, useDiskCache)
+        },
+        onRelease = { view ->
+            view.stop()
+            view.freeCache()
+        },
+        properties = UIKitInteropProperties(
+            isInteractive = true,
+            isNativeAccessibilityEnabled = true,
+        ),
+    )
 }

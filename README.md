@@ -110,6 +110,29 @@ fun LocalAnimation() {
 }
 ```
 
+Alternatively, pass a local file path or network URL directly with `PagView(path)`. The library
+loads it asynchronously (nothing renders until ready; a load failure is logged, not thrown):
+
+```kotlin
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import io.github.limuyang2.libpag.cmp.PagScaleMode
+import io.github.limuyang2.libpag.cmp.PagView
+
+@Composable
+fun RemoteAnimation(url: String) {
+    PagView(
+        path = url,
+        modifier = Modifier.size(160.dp),
+        scaleMode = PagScaleMode.LetterBox,
+    )
+}
+```
+
+`path` accepts a local file path on every target, and an `http`/`https` URL on Android, JS, and
+WasmJS (JVM downloads it via the JDK; iOS network support is best-effort).
+
 On Android, iOS, and JVM, repeated rendering of the same file can load a composition once and pass
 it to `PagView`:
 

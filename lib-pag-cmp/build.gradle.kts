@@ -96,6 +96,7 @@ kotlin {
 
         jvmMain {
             dependencies {
+                implementation(libs.kotlinx.coroutinesCore)
                 implementation(libs.skiko)
             }
         }
@@ -111,12 +112,6 @@ kotlin {
             dependencies {
                 implementation(libs.kotlinx.coroutinesCore)
                 implementation(libs.wrappers.browser)
-            }
-        }
-
-        commonTest {
-            dependencies {
-                implementation(libs.kotlin.test)
             }
         }
 

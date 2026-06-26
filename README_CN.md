@@ -109,6 +109,29 @@ fun LocalAnimation() {
 }
 ```
 
+也可以直接用 `PagView(path)` 传入本地文件路径或网络 URL，库会异步加载（加载完成前不渲染；
+加载失败会记日志而非抛异常）：
+
+```kotlin
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import io.github.limuyang2.libpag.cmp.PagScaleMode
+import io.github.limuyang2.libpag.cmp.PagView
+
+@Composable
+fun RemoteAnimation(url: String) {
+    PagView(
+        path = url,
+        modifier = Modifier.size(160.dp),
+        scaleMode = PagScaleMode.LetterBox,
+    )
+}
+```
+
+`path` 在所有平台都支持本地文件路径；网络 URL（`http`/`https`）在 Android、JS、WasmJS 上支持
+（JVM 通过 JDK 下载；iOS 网络支持为 best-effort）。
+
 在 Android、iOS 和 JVM 上，如果同一个 PAG 文件会反复渲染，可以先加载 `PagComposition`，
 再传给 `PagView`：
 

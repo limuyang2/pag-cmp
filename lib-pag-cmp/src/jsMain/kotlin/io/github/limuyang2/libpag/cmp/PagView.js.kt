@@ -15,11 +15,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.Promise
 import kotlinx.coroutines.await
 import web.dom.document
 import web.html.HTMLCanvasElement
+import kotlin.js.Promise
 
 @Composable
 actual fun PagView(
@@ -115,6 +114,42 @@ actual fun PagView(
     useDiskCache: Boolean,
 ) {
     unsupportedPagPlatform("JS PagView(composition)")
+}
+
+@Composable
+actual fun PagView(
+    path: String,
+    modifier: Modifier,
+    isPlaying: Boolean,
+    progress: Double?,
+    repeatCount: Int,
+    scaleMode: PagScaleMode,
+    cacheEnabled: Boolean,
+    videoEnabled: Boolean,
+    useDiskCache: Boolean,
+) {
+    // Fetch the path (a local resource URL or a network URL) into bytes, then reuse the
+    // PagView(bytes) DOM-canvas renderer. Loading is async; nothing renders until bytes are ready.
+    var bytes by remember(path) { mutableStateOf<ByteArray?>(null) }
+    LaunchedEffect(path) {
+        bytes = runCatching { JsPagBridge.loadPathBytes(path) }.getOrElse {
+            println("PagView: failed to load PAG from path: $path")
+            null
+        }
+    }
+    bytes?.let {
+        PagView(
+            bytes = it,
+            modifier = modifier,
+            isPlaying = isPlaying,
+            progress = progress,
+            repeatCount = repeatCount,
+            scaleMode = scaleMode,
+            cacheEnabled = cacheEnabled,
+            videoEnabled = videoEnabled,
+            useDiskCache = useDiskCache,
+        )
+    }
 }
 
 private data class JsPagBounds(
@@ -311,6 +346,42 @@ private external fun pagSetVideoEnabled(canvas: HTMLCanvasElement, enabled: Bool
 )
 private external fun pagDestroy(canvas: HTMLCanvasElement)
 
+@JsFun(
+    """
+    (path) => fetch(path).then((res) => {
+      if (!res.ok) throw new Error("Failed to fetch PAG: " + res.status + " " + res.statusText);
+      return res.arrayBuffer();
+    }).then((buffer) => {
+      const bytes = new Uint8Array(buffer);
+      globalThis.__pag_cmp_path_cache = globalThis.__pag_cmp_path_cache || {};
+      globalThis.__pag_cmp_path_cache[path] = bytes;
+      return bytes.length;
+    })
+    """
+)
+private external fun fetchPagPathBytes(path: String): Promise<Int>
+
+@JsFun(
+    """
+    (path, index) => {
+      const cache = globalThis.__pag_cmp_path_cache;
+      const bytes = cache && cache[path];
+      return bytes ? bytes[index] : 0;
+    }
+    """
+)
+private external fun readFetchedByte(path: String, index: Int): Int
+
+@JsFun(
+    """
+    (path) => {
+      const cache = globalThis.__pag_cmp_path_cache;
+      if (cache) delete cache[path];
+    }
+    """
+)
+private external fun clearFetchedBytes(path: String)
+
 private object JsPagBridge {
     fun init(canvas: HTMLCanvasElement, bytes: ByteArray) =
         pagInit(canvas, bytes.size) { index -> bytes[index].toInt() }
@@ -326,4 +397,10 @@ private object JsPagBridge {
         pagSetCanvasBounds(canvas, left, top, width, height)
 
     fun destroy(canvas: HTMLCanvasElement) = pagDestroy(canvas)
+
+    suspend fun loadPathBytes(path: String): ByteArray {
+        val size = fetchPagPathBytes(path).await()
+        require(size > 0) { "PAG bytes must not be empty." }
+        return ByteArray(size) { readFetchedByte(path, it).toByte() }.also { clearFetchedBytes(path) }
+    }
 }

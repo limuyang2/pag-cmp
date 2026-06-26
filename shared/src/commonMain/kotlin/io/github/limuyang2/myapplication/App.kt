@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,13 +36,22 @@ fun App() {
 
         LaunchedEffect(Unit) {
             pagSamples = pagSamples.map { sample ->
-                runCatching { Res.readBytes(sample.resourcePath) }
-                    .fold(
-                        onSuccess = { bytes -> sample.copy(bytes = bytes, errorMessage = null) },
-                        onFailure = { throwable ->
-                            sample.copy(errorMessage = throwable.toPagLoadError())
-                        },
-                    )
+                when (val source = sample.source) {
+                    is PagSource.BytesResource -> {
+                        runCatching { Res.readBytes(source.resourcePath) }
+                            .fold(
+                                onSuccess = { bytes ->
+                                    sample.copy(source = source.copy(bytes = bytes), errorMessage = null)
+                                },
+                                onFailure = { throwable ->
+                                    sample.copy(errorMessage = throwable.toPagLoadError())
+                                },
+                            )
+                    }
+
+                    is PagSource.LocalPath,
+                    is PagSource.NetworkUrl -> sample
+                }
             }
         }
 
@@ -78,7 +88,7 @@ private fun PagSamplePreview(sample: PagSample) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         PagPreview(
-            bytes = sample.bytes,
+            source = sample.source,
             errorMessage = sample.errorMessage,
         )
     }
@@ -86,22 +96,38 @@ private fun PagSamplePreview(sample: PagSample) {
 
 private data class PagSample(
     val name: String,
-    val resourcePath: String,
-    val bytes: ByteArray? = null,
+    val source: PagSource,
     val errorMessage: String? = null,
 ) {
     companion object {
         fun defaults(): List<PagSample> = listOf(
             PagSample(
-                name = "8.pag",
-                resourcePath = "files/8.pag",
+                name = "ByteArray",
+                source = PagSource.BytesResource("files/8.pag"),
             ),
             PagSample(
-                name = "loading_bmp.pag",
-                resourcePath = "files/loading_bmp.pag",
+                name = "Local path",
+                source = PagSource.LocalPath(demoLocalPagPath("files/loading_bmp.pag")),
+            ),
+            PagSample(
+                name = "Network URL",
+                source = PagSource.NetworkUrl(
+                    "https://github.com/limuyang2/pag-cmp/raw/refs/heads/main/shared/src/commonMain/composeResources/files/8.pag",
+                ),
             ),
         )
     }
+}
+
+private sealed interface PagSource {
+    data class BytesResource(
+        val resourcePath: String,
+        val bytes: ByteArray? = null,
+    ) : PagSource
+
+    data class LocalPath(val path: String) : PagSource
+
+    data class NetworkUrl(val url: String) : PagSource
 }
 
 private fun Throwable.toPagLoadError(): String =
@@ -112,32 +138,44 @@ private fun Throwable.toPagLoadError(): String =
 
 @Composable
 private fun PagPreview(
-    bytes: ByteArray?,
+    source: PagSource,
     errorMessage: String?,
 ) {
     Box(
         modifier = Modifier
-            .size(230.dp)
+            .size(180.dp)
             .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {
         when {
-            bytes != null -> {
+            source is PagSource.BytesResource && source.bytes != null -> {
                 PagView(
-                    bytes = bytes,
+                    bytes = source.bytes,
                     modifier = Modifier.fillMaxSize(),
                     isPlaying = true,
                     repeatCount = 0,
                 )
             }
 
-            errorMessage != null -> {
-                Text(
-                    text = errorMessage,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
+            source is PagSource.LocalPath -> {
+                PagView(
+                    path = source.path,
+                    modifier = Modifier.fillMaxSize(),
+                    isPlaying = true,
+                    repeatCount = 0,
                 )
             }
+
+            source is PagSource.NetworkUrl -> {
+                PagView(
+                    path = source.url,
+                    modifier = Modifier.fillMaxSize(),
+                    isPlaying = true,
+                    repeatCount = 0,
+                )
+            }
+
+            errorMessage != null -> ErrorText(errorMessage)
 
             else -> {
                 Text(
@@ -148,4 +186,14 @@ private fun PagPreview(
             }
         }
     }
+}
+
+@Composable
+private fun ErrorText(message: String) {
+    Text(
+        text = message,
+        modifier = Modifier.widthIn(max = 200.dp),
+        color = MaterialTheme.colorScheme.error,
+        style = MaterialTheme.typography.bodyMedium,
+    )
 }
