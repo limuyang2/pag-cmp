@@ -20,6 +20,8 @@ runner = "1.7.0"
 core = "1.7.0"
 libpag = "4.5.70"
 
+skiko = "0.144.6"
+
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
@@ -44,6 +46,8 @@ kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", versio
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
 libpag = { module = "com.tencent.tav:libpag", version.ref = "libpag" }
+
+skiko = { module = "org.jetbrains.skiko:skiko", version.ref = "skiko" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

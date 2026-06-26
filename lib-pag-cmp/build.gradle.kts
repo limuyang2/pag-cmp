@@ -78,7 +78,14 @@ kotlin {
             dependencies {
                 implementation(libs.kotlin.stdlib)
                 implementation(libs.compose.ui)
+                implementation(libs.compose.foundation)
                 // Add KMP dependencies here
+            }
+        }
+
+        jvmMain {
+            dependencies {
+                implementation(libs.skiko)
             }
         }
 
