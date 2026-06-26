@@ -12,15 +12,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 actual fun PagView(
@@ -149,8 +144,10 @@ actual fun PagView(
             .fillMaxSize()
             .onSizeChanged { canvasSize = it },
     ) {
+        // scaleMode 已在 libpag native 渲染到 offscreen surface 时处理。
+        // Compose 这里只负责把 readPixels 得到的结果 1:1 画出来。
         frame?.let { renderedFrame ->
-            drawPagImage(renderedFrame.image, scaleMode)
+            drawImage(renderedFrame.image)
         }
     }
 }
@@ -163,40 +160,3 @@ private data class JvmPagRenderedFrame(
 private fun PagPlayer.asJvmPagPlayer(): JvmPagPlayer =
     this as? JvmPagPlayer
         ?: error("JVM PagView requires a player created by Pag.createPlayer() on JVM.")
-
-private fun DrawScope.drawPagImage(
-    image: ImageBitmap,
-    scaleMode: PagScaleMode,
-) {
-    val srcWidth = image.width.toFloat()
-    val srcHeight = image.height.toFloat()
-    val dstWidth = size.width
-    val dstHeight = size.height
-    if (srcWidth <= 0f || srcHeight <= 0f || dstWidth <= 0f || dstHeight <= 0f) return
-
-    val (targetSize, topLeft) = when (scaleMode) {
-        PagScaleMode.Stretch -> Size(dstWidth, dstHeight) to Offset.Zero
-        PagScaleMode.None -> Size(srcWidth, srcHeight) to Offset.Zero
-        PagScaleMode.LetterBox -> {
-            val scale = min(dstWidth / srcWidth, dstHeight / srcHeight)
-            val width = srcWidth * scale
-            val height = srcHeight * scale
-            Size(width, height) to Offset((dstWidth - width) / 2f, (dstHeight - height) / 2f)
-        }
-        PagScaleMode.Zoom -> {
-            val scale = max(dstWidth / srcWidth, dstHeight / srcHeight)
-            val width = srcWidth * scale
-            val height = srcHeight * scale
-            Size(width, height) to Offset((dstWidth - width) / 2f, (dstHeight - height) / 2f)
-        }
-    }
-
-    drawImage(
-        image = image,
-        dstOffset = IntOffset(topLeft.x.toInt(), topLeft.y.toInt()),
-        dstSize = IntSize(
-            targetSize.width.toInt().coerceAtLeast(1),
-            targetSize.height.toInt().coerceAtLeast(1),
-        ),
-    )
-}

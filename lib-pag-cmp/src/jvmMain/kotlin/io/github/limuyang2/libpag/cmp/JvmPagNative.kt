@@ -61,20 +61,35 @@ internal object JvmPagNative {
 }
 
 private fun loadNativeLibraries() {
+    try {
+        loadNativeLibrariesOrThrow()
+    } catch (throwable: UnsatisfiedLinkError) {
+        throw IllegalStateException(
+            "Failed to load libpag JVM native libraries. " +
+                "Platform=${BundledJvmNative.platformDescription()}. " +
+                "Set -Dlibpag.cmp.libpag and -Dlibpag.cmp.bridge to debug with external binaries.",
+            throwable,
+        )
+    }
+}
+
+private fun loadNativeLibrariesOrThrow() {
     val explicitLibpagPath = System.getProperty("libpag.cmp.libpag")?.takeIf { it.isNotBlank() }
     val explicitBridgePath = System.getProperty("libpag.cmp.bridge")?.takeIf { it.isNotBlank() }
 
+    // 调试时允许绕过 jar 内置资源，直接加载外部构建产物。
     explicitLibpagPath?.let { path ->
-        System.load(File(path).absolutePath)
+        loadNativeFile(path, "libpag.cmp.libpag")
     }
 
     explicitBridgePath?.let { path ->
-        System.load(File(path).absolutePath)
+        loadNativeFile(path, "libpag.cmp.bridge")
         return
     }
 
     val bundledNative = BundledJvmNative.current()
     if (bundledNative != null) {
+        // 正常消费路径：从 JVM jar 中释放 native 文件到临时目录再加载。
         if (explicitLibpagPath == null) {
             System.load(bundledNative.libpagPath)
         }
@@ -83,6 +98,14 @@ private fun loadNativeLibraries() {
     }
 
     System.loadLibrary("pag_cmp_jvm")
+}
+
+private fun loadNativeFile(path: String, propertyName: String) {
+    val file = File(path).absoluteFile
+    check(file.isFile) {
+        "Native library path from -D$propertyName does not exist or is not a file: ${file.path}"
+    }
+    System.load(file.path)
 }
 
 private data class BundledJvmNative(
@@ -95,19 +118,24 @@ private data class BundledJvmNative(
             val nativeDir = Files.createTempDirectory("libpag-cmp-$platform-").apply {
                 toFile().deleteOnExit()
             }
+            val libpagResource = "/native/$platform/libpag"
+            val bridgeResource = "/native/$platform/libpag_cmp_jvm.dylib"
             val libpag = extractResource(
-                resourcePath = "/native/$platform/libpag",
+                resourcePath = libpagResource,
                 target = nativeDir.resolve("libpag"),
-            ) ?: return null
+            ) ?: throw UnsatisfiedLinkError("Bundled native resource is missing: $libpagResource")
             val bridge = extractResource(
-                resourcePath = "/native/$platform/libpag_cmp_jvm.dylib",
+                resourcePath = bridgeResource,
                 target = nativeDir.resolve("libpag_cmp_jvm.dylib"),
-            ) ?: return null
+            ) ?: throw UnsatisfiedLinkError("Bundled native resource is missing: $bridgeResource")
             return BundledJvmNative(
                 libpagPath = libpag.absolutePathString(),
                 bridgePath = bridge.absolutePathString(),
             )
         }
+
+        fun platformDescription(): String =
+            "${System.getProperty("os.name")} ${System.getProperty("os.arch")}"
 
         private fun currentPlatform(): String? {
             val os = System.getProperty("os.name").lowercase()
@@ -159,6 +187,7 @@ internal class JvmPagFrameBuffer {
     private fun ensureAllocated(newSize: PagSize) {
         if (size == newSize) return
 
+        // 只有尺寸变化时才重建大对象；普通帧只更新像素内容。
         size = newSize
         pixels = ByteArray(newSize.width * newSize.height * BytesPerPixel)
         bitmap = Bitmap().apply {

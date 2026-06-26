@@ -32,7 +32,12 @@ class NativePlayer final : public NativeHandle {
 
 template <typename T>
 T* fromHandle(jlong handle) {
-  return reinterpret_cast<T*>(static_cast<intptr_t>(handle));
+  auto* nativeHandle = reinterpret_cast<NativeHandle*>(static_cast<intptr_t>(handle));
+  return dynamic_cast<T*>(nativeHandle);
+}
+
+NativeHandle* fromHandle(jlong handle) {
+  return reinterpret_cast<NativeHandle*>(static_cast<intptr_t>(handle));
 }
 
 jlong toHandle(NativeHandle* handle) {
@@ -221,6 +226,9 @@ Java_io_github_limuyang2_libpag_cmp_JvmPagNative_renderToBgra(JNIEnv* env, jclas
 
   nativePlayer->player->setProgress(progress);
   nativePlayer->player->setScaleMode(toScaleMode(scaleMode));
+  // PAGPlayer::flush() can return false when the current content version has not changed.
+  // The previous surface pixels are still valid in that case, so readPixels() is the real
+  // success condition for this CPU readback bridge.
   nativePlayer->player->flush();
 
   jboolean copied = JNI_FALSE;
@@ -238,5 +246,5 @@ Java_io_github_limuyang2_libpag_cmp_JvmPagNative_renderToBgra(JNIEnv* env, jclas
 
 extern "C" JNIEXPORT void JNICALL
 Java_io_github_limuyang2_libpag_cmp_JvmPagNative_release(JNIEnv*, jclass, jlong handle) {
-  delete fromHandle<NativeHandle>(handle);
+  delete fromHandle(handle);
 }
