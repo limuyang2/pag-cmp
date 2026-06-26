@@ -175,6 +175,26 @@ Java_io_github_limuyang2_libpag_cmp_JvmPagNative_setCacheEnabled(JNIEnv*, jclass
   }
 }
 
+extern "C" JNIEXPORT void JNICALL
+Java_io_github_limuyang2_libpag_cmp_JvmPagNative_setVideoEnabled(JNIEnv*, jclass,
+                                                                 jlong playerHandle,
+                                                                 jboolean videoEnabled) {
+  auto* nativePlayer = fromHandle<NativePlayer>(playerHandle);
+  if (nativePlayer != nullptr) {
+    nativePlayer->player->setVideoEnabled(videoEnabled == JNI_TRUE);
+  }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_io_github_limuyang2_libpag_cmp_JvmPagNative_setUseDiskCache(JNIEnv*, jclass,
+                                                                 jlong playerHandle,
+                                                                 jboolean useDiskCache) {
+  auto* nativePlayer = fromHandle<NativePlayer>(playerHandle);
+  if (nativePlayer != nullptr) {
+    nativePlayer->player->setUseDiskCache(useDiskCache == JNI_TRUE);
+  }
+}
+
 extern "C" JNIEXPORT jboolean JNICALL
 Java_io_github_limuyang2_libpag_cmp_JvmPagNative_renderToBgra(JNIEnv* env, jclass,
                                                               jlong playerHandle, jint width,

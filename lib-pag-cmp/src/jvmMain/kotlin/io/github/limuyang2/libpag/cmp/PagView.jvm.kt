@@ -63,7 +63,7 @@ actual fun PagView(
     videoEnabled: Boolean,
     useDiskCache: Boolean,
 ) {
-    val player = remember { Pag.createPlayer() }
+    val player = remember { Pag.createPlayer().asJvmPagPlayer() }
     val currentIsPlaying by rememberUpdatedState(isPlaying)
     val currentProgress by rememberUpdatedState(progress)
     val currentRepeatCount by rememberUpdatedState(repeatCount)
@@ -76,10 +76,12 @@ actual fun PagView(
         onDispose { player.close() }
     }
 
-    LaunchedEffect(player, composition, scaleMode, cacheEnabled) {
+    LaunchedEffect(player, composition, scaleMode, cacheEnabled, videoEnabled, useDiskCache) {
         player.composition = composition
         player.scaleMode = scaleMode
         player.cacheEnabled = cacheEnabled
+        player.videoEnabled = videoEnabled
+        player.useDiskCache = useDiskCache
     }
 
     LaunchedEffect(
@@ -91,6 +93,8 @@ actual fun PagView(
         repeatCount,
         scaleMode,
         cacheEnabled,
+        videoEnabled,
+        useDiskCache,
     ) {
         val width = canvasSize.width
         val height = canvasSize.height
@@ -146,6 +150,10 @@ actual fun PagView(
         }
     }
 }
+
+private fun PagPlayer.asJvmPagPlayer(): JvmPagPlayer =
+    this as? JvmPagPlayer
+        ?: error("JVM PagView requires a player created by Pag.createPlayer() on JVM.")
 
 private fun DrawScope.drawPagImage(
     image: ImageBitmap,

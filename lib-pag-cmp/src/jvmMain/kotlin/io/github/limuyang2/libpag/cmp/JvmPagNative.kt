@@ -41,6 +41,12 @@ internal object JvmPagNative {
     external fun setCacheEnabled(playerHandle: Long, cacheEnabled: Boolean)
 
     @JvmStatic
+    external fun setVideoEnabled(playerHandle: Long, videoEnabled: Boolean)
+
+    @JvmStatic
+    external fun setUseDiskCache(playerHandle: Long, useDiskCache: Boolean)
+
+    @JvmStatic
     external fun renderToBgra(
         playerHandle: Long,
         width: Int,

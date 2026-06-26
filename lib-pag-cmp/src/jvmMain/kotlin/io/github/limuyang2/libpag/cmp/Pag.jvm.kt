@@ -59,6 +59,18 @@ internal class JvmPagPlayer(
             JvmPagNative.setCacheEnabled(handle, value)
         }
 
+    var videoEnabled: Boolean = true
+        set(value) {
+            field = value
+            JvmPagNative.setVideoEnabled(handle, value)
+        }
+
+    var useDiskCache: Boolean = false
+        set(value) {
+            field = value
+            JvmPagNative.setUseDiskCache(handle, value)
+        }
+
     override fun render(size: PagSize): ImageBitmap {
         check(!closed) { "PagPlayer is closed." }
         requireComposition()
