@@ -89,6 +89,13 @@ kotlin {
             }
         }
 
+        wasmJsMain {
+            dependencies {
+                implementation(libs.kotlinx.coroutinesCore)
+                implementation(libs.wrappers.browser)
+            }
+        }
+
         commonTest {
             dependencies {
                 implementation(libs.kotlin.test)
