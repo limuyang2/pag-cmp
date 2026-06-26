@@ -7,11 +7,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
-import swiftPMImport.Pagcmp.lib.pag.cmp.PAGScaleModeLetterBox
-import swiftPMImport.Pagcmp.lib.pag.cmp.PAGScaleModeNone
-import swiftPMImport.Pagcmp.lib.pag.cmp.PAGScaleModeStretch
-import swiftPMImport.Pagcmp.lib.pag.cmp.PAGScaleModeZoom
-import swiftPMImport.Pagcmp.lib.pag.cmp.PAGView
+import swiftPMImport.io.github.limuyang2.lib.pag.cmp.PAGScaleModeLetterBox
+import swiftPMImport.io.github.limuyang2.lib.pag.cmp.PAGScaleModeNone
+import swiftPMImport.io.github.limuyang2.lib.pag.cmp.PAGScaleModeStretch
+import swiftPMImport.io.github.limuyang2.lib.pag.cmp.PAGScaleModeZoom
+import swiftPMImport.io.github.limuyang2.lib.pag.cmp.PAGView
 
 @Composable
 actual fun PagView(

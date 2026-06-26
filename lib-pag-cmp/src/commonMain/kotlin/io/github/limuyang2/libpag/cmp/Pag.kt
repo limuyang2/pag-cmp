@@ -33,10 +33,31 @@ data class PagSize(
     }
 }
 
+/**
+ * Controls how PAG content is fitted into the render area.
+ *
+ * This only affects the content transform inside the native PAG renderer. It does not measure,
+ * resize, or otherwise affect the Compose [PagView] layout bounds.
+ */
 enum class PagScaleMode {
+    /**
+     * Keeps the PAG composition at its original size and position.
+     */
     None,
+
+    /**
+     * Scales width and height independently to fill the render area. The content may be distorted.
+     */
     Stretch,
+
+    /**
+     * Scales uniformly until the whole composition is visible. Empty space may remain on one axis.
+     */
     LetterBox,
+
+    /**
+     * Scales uniformly until the render area is fully covered. Content may be cropped on one axis.
+     */
     Zoom,
 }
 

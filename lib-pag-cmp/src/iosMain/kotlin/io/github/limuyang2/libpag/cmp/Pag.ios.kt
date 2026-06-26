@@ -4,8 +4,8 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
-import swiftPMImport.Pagcmp.lib.pag.cmp.PAGFile
-import swiftPMImport.Pagcmp.lib.pag.cmp.PAGComposition as IosNativePagComposition
+import swiftPMImport.io.github.limuyang2.lib.pag.cmp.PAGFile
+import swiftPMImport.io.github.limuyang2.lib.pag.cmp.PAGComposition as IosNativePagComposition
 
 @OptIn(ExperimentalForeignApi::class)
 actual object Pag {
