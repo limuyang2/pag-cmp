@@ -13,8 +13,6 @@
 | iOS | 已支持 | 原生 `PAGView` + `UIKitView` |
 | JVM Desktop | 已支持 macOS arm64 | libpag 离屏渲染 -> 像素读取 -> Compose `ImageBitmap` |
 | WasmJS | 已支持 | libpag Web SDK canvas 集成 |
-| JS | 仅编译占位 | 不作为支持的 artifact 发布 |
-| macOS Kotlin/Native | 暂不支持 | Compose macOS 当前没有公开的 `NSView` 包装 API |
 
 JVM artifact 目前只打包了 `macos-arm64` native 运行时文件。
 Linux 和 Windows 的 JVM native 包还没有加入。
@@ -45,8 +43,6 @@ kotlin {
 - `io.github.limuyang2:lib-pag-cmp-wasm-js`
 - `io.github.limuyang2:lib-pag-cmp-ios-arm64`
 - `io.github.limuyang2:lib-pag-cmp-ios-simulator-arm64`
-
-没有支持的 `lib-pag-cmp-js` artifact。
 
 ## 基础用法
 

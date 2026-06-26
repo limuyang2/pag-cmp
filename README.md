@@ -13,8 +13,6 @@ It provides a common `PagView` composable and platform implementations for rende
 | iOS | Supported | Native `PAGView` through `UIKitView` |
 | JVM Desktop | Supported on macOS arm64 | libpag offscreen render -> pixels -> Compose `ImageBitmap` |
 | WasmJS | Supported | libpag Web SDK canvas integration |
-| JS | Compile-only stub | Not published as a supported artifact |
-| macOS Kotlin/Native | Not supported | Compose macOS does not currently expose a public `NSView` wrapper |
 
 The JVM artifact currently bundles native runtime files only for `macos-arm64`.
 Linux and Windows JVM native packages are not included yet.
@@ -45,8 +43,6 @@ Platform publications are produced as:
 - `io.github.limuyang2:lib-pag-cmp-wasm-js`
 - `io.github.limuyang2:lib-pag-cmp-ios-arm64`
 - `io.github.limuyang2:lib-pag-cmp-ios-simulator-arm64`
-
-There is no supported `lib-pag-cmp-js` artifact.
 
 ## Basic Usage
 
