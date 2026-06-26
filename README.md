@@ -12,6 +12,7 @@ It provides a common `PagView` composable and platform implementations for rende
 | Android | Supported | Native `org.libpag.PAGView` through `AndroidView` |
 | iOS | Supported | Native `PAGView` through `UIKitView` |
 | JVM Desktop | Supported on macOS arm64 | libpag offscreen render -> pixels -> Compose `ImageBitmap` |
+| JS | Supported | libpag Web SDK canvas integration |
 | WasmJS | Supported | libpag Web SDK canvas integration |
 
 The JVM artifact currently bundles native runtime files only for `macos-arm64`.
@@ -40,6 +41,7 @@ Platform publications are produced as:
 - `io.github.limuyang2:lib-pag-cmp`
 - `io.github.limuyang2:lib-pag-cmp-android`
 - `io.github.limuyang2:lib-pag-cmp-jvm`
+- `io.github.limuyang2:lib-pag-cmp-js`
 - `io.github.limuyang2:lib-pag-cmp-wasm-js`
 - `io.github.limuyang2:lib-pag-cmp-ios-arm64`
 - `io.github.limuyang2:lib-pag-cmp-ios-simulator-arm64`
@@ -68,7 +70,8 @@ fun LoadingAnimation(bytes: ByteArray) {
 }
 ```
 
-For repeated rendering of the same file, load a composition once and pass it to `PagView`:
+On Android, iOS, and JVM, repeated rendering of the same file can load a composition once and pass
+it to `PagView`:
 
 ```kotlin
 import androidx.compose.runtime.Composable
@@ -88,6 +91,8 @@ fun ReusedAnimation(bytes: ByteArray) {
     PagView(composition = composition)
 }
 ```
+
+The JS and WasmJS implementations currently use `PagView(bytes)` as the supported Web path.
 
 ## Parameters
 
@@ -113,7 +118,7 @@ resize, or otherwise affect the Compose `PagView` layout bounds.
 
 ## Web Runtime
 
-The WasmJS implementation expects the libpag Web SDK to be loaded before the Compose app starts.
+The JS and WasmJS implementations expect the libpag Web SDK to be loaded before the Compose app starts.
 The project demo loads the bundled SDK resources from the web app.
 
 If your app hosts the library differently, make sure `libpag.min.js` and its wasm runtime are available
@@ -142,6 +147,7 @@ Useful verification commands:
 ./gradlew :lib-pag-cmp:compileKotlinIosArm64
 ./gradlew :lib-pag-cmp:compileKotlinIosSimulatorArm64
 ./gradlew :lib-pag-cmp:compileKotlinJvm
+./gradlew :lib-pag-cmp:compileKotlinJs
 ./gradlew :lib-pag-cmp:compileKotlinWasmJs
 ```
 

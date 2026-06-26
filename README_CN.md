@@ -12,6 +12,7 @@
 | Android | 已支持 | 原生 `org.libpag.PAGView` + `AndroidView` |
 | iOS | 已支持 | 原生 `PAGView` + `UIKitView` |
 | JVM Desktop | 已支持 macOS arm64 | libpag 离屏渲染 -> 像素读取 -> Compose `ImageBitmap` |
+| JS | 已支持 | libpag Web SDK canvas 集成 |
 | WasmJS | 已支持 | libpag Web SDK canvas 集成 |
 
 JVM artifact 目前只打包了 `macos-arm64` native 运行时文件。
@@ -40,6 +41,7 @@ kotlin {
 - `io.github.limuyang2:lib-pag-cmp`
 - `io.github.limuyang2:lib-pag-cmp-android`
 - `io.github.limuyang2:lib-pag-cmp-jvm`
+- `io.github.limuyang2:lib-pag-cmp-js`
 - `io.github.limuyang2:lib-pag-cmp-wasm-js`
 - `io.github.limuyang2:lib-pag-cmp-ios-arm64`
 - `io.github.limuyang2:lib-pag-cmp-ios-simulator-arm64`
@@ -68,7 +70,8 @@ fun LoadingAnimation(bytes: ByteArray) {
 }
 ```
 
-如果同一个 PAG 文件会反复渲染，可以先加载 `PagComposition`，再传给 `PagView`：
+在 Android、iOS 和 JVM 上，如果同一个 PAG 文件会反复渲染，可以先加载 `PagComposition`，
+再传给 `PagView`：
 
 ```kotlin
 import androidx.compose.runtime.Composable
@@ -88,6 +91,8 @@ fun ReusedAnimation(bytes: ByteArray) {
     PagView(composition = composition)
 }
 ```
+
+JS 和 WasmJS 当前支持的 Web 路径是 `PagView(bytes)`。
 
 ## 参数说明
 
@@ -113,7 +118,7 @@ fun ReusedAnimation(bytes: ByteArray) {
 
 ## Web 运行时
 
-WasmJS 实现要求 libpag Web SDK 在 Compose app 启动前加载完成。
+JS 和 WasmJS 实现要求 libpag Web SDK 在 Compose app 启动前加载完成。
 当前 demo 会从 web app 里加载打包的 SDK 资源。
 
 如果业务 app 使用自己的托管方式，需要确保 `libpag.min.js` 以及对应 wasm runtime
@@ -142,6 +147,7 @@ JVM native 产物的重新构建和替换方式见 [BUILD.md](./BUILD.md)。
 ./gradlew :lib-pag-cmp:compileKotlinIosArm64
 ./gradlew :lib-pag-cmp:compileKotlinIosSimulatorArm64
 ./gradlew :lib-pag-cmp:compileKotlinJvm
+./gradlew :lib-pag-cmp:compileKotlinJs
 ./gradlew :lib-pag-cmp:compileKotlinWasmJs
 ```
 

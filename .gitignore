@@ -54,5 +54,5 @@ google-services.json
 
 # Android Profiling
 *.hprof
-/kotlin-js-store/wasm/yarn.lock
+/kotlin-js-store/
 /RepoDir

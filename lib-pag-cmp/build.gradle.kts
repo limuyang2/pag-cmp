@@ -100,6 +100,13 @@ kotlin {
             }
         }
 
+        jsMain {
+            dependencies {
+                implementation(libs.kotlinx.coroutinesCore)
+                implementation(libs.wrappers.browser)
+            }
+        }
+
         wasmJsMain {
             dependencies {
                 implementation(libs.kotlinx.coroutinesCore)
@@ -168,6 +175,7 @@ publishing {
             "kotlinMultiplatform" -> "lib-pag-cmp"
             "android" -> "lib-pag-cmp-android"
             "jvm" -> "lib-pag-cmp-jvm".also { artifact(emptyJavadocJar) }
+            "js" -> "lib-pag-cmp-js"
             "wasmJs" -> "lib-pag-cmp-wasm-js"
             "iosArm64" -> "lib-pag-cmp-ios-arm64"
             "iosSimulatorArm64" -> "lib-pag-cmp-ios-simulator-arm64"
