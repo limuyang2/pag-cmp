@@ -1,6 +1,7 @@
 # lib-pag-cmp
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.limuyang2/lib-pag-cmp.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.limuyang2/lib-pag-cmp)
+[![Context7](https://img.shields.io/badge/Context7-AI-5D5FEC.svg)](https://context7.com/limuyang2/pag-cmp)
 
 `lib-pag-cmp` 是 Tencent [libpag](https://github.com/Tencent/libpag) 的 Compose Multiplatform 封装。
 它提供 common 层的 `PagView` Composable，并在不同平台使用对应的 libpag 渲染能力显示 PAG 动画文件。
