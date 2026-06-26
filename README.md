@@ -1,5 +1,7 @@
 # lib-pag-cmp
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.limuyang2/lib-pag-cmp.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.limuyang2/lib-pag-cmp)
+
 `lib-pag-cmp` is a Compose Multiplatform wrapper for Tencent [libpag](https://github.com/Tencent/libpag).
 It provides a common `PagView` composable and platform implementations for rendering PAG animation files.
 
