@@ -1,11 +1,22 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import java.io.FileInputStream
+import java.io.InputStreamReader
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.androidLint)
+    `maven-publish`
+    signing
 }
+
+val libraryGroup = "io.github.limuyang2"
+val libraryVersion = "0.1.0"
+
+group = libraryGroup
+version = libraryVersion
 
 kotlin {
 
@@ -124,4 +135,91 @@ kotlin {
         }
     }
 
+}
+
+//---------- maven upload info -----------------------------------
+
+var signingKeyId = ""
+var signingPassword = ""
+var secretKeyRingFile = ""
+
+val localProperties = project.rootProject.file("local.properties")
+if (localProperties.exists()) {
+    val properties = Properties()
+    InputStreamReader(FileInputStream(localProperties), Charsets.UTF_8).use { reader ->
+        properties.load(reader)
+    }
+    signingKeyId = properties.getProperty("signing.keyId", "")
+    signingPassword = properties.getProperty("signing.password", "")
+    secretKeyRingFile = properties.getProperty("signing.secretKeyRingFile", "")
+}
+
+val emptyJavadocJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("javadoc")
+    description = "Assembles an empty javadoc jar required by Maven Central validation."
+}
+
+publishing {
+    publications.withType<MavenPublication>().configureEach {
+        groupId = libraryGroup
+        version = libraryVersion
+
+        artifactId = when (name) {
+            "kotlinMultiplatform" -> "lib-pag-cmp"
+            "android" -> "lib-pag-cmp-android"
+            "jvm" -> "lib-pag-cmp-jvm".also { artifact(emptyJavadocJar) }
+            "wasmJs" -> "lib-pag-cmp-wasm-js"
+            "iosArm64" -> "lib-pag-cmp-ios-arm64"
+            "iosSimulatorArm64" -> "lib-pag-cmp-ios-simulator-arm64"
+            else -> artifactId
+        }
+
+        pom {
+            name.set("lib-pag-cmp")
+            description.set("A Compose Multiplatform PAG animation library.")
+            url.set("https://github.com/limuyang2/lib-pag-cmp")
+
+            licenses {
+                license {
+                    name.set("The Apache License, Version 2.0")
+                    url.set("https://github.com/limuyang2/lib-pag-cmp/blob/main/LICENSE")
+                }
+            }
+
+            developers {
+                developer {
+                    id.set("limuyang2")
+                    name.set("limuyang")
+                    email.set("limuyang2@hotmail.com")
+                }
+            }
+
+            scm {
+                connection.set("scm:git@github.com:limuyang2/lib-pag-cmp.git")
+                developerConnection.set("scm:git@github.com:limuyang2/lib-pag-cmp.git")
+                url.set("https://github.com/limuyang2/lib-pag-cmp")
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "Maven"
+            setUrl(rootProject.layout.projectDirectory.dir("RepoDir"))
+        }
+    }
+}
+
+gradle.taskGraph.whenReady {
+    if (allTasks.any { it is Sign }) {
+        allprojects {
+            extra["signing.keyId"] = signingKeyId
+            extra["signing.secretKeyRingFile"] = secretKeyRingFile
+            extra["signing.password"] = signingPassword
+        }
+    }
+}
+
+signing {
+    sign(publishing.publications)
 }
