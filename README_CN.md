@@ -5,6 +5,8 @@
 
 [English](./README.md)
 
+各平台实现均基于 Tencent 原版 [libpag](https://github.com/Tencent/libpag) **4.5.70** 构建。
+
 ## 当前状态
 
 | 平台 | 状态 | 渲染路径 |
@@ -30,7 +32,7 @@ repositories {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.limuyang2:lib-pag-cmp:0.1.0")
+            implementation("io.github.limuyang2:lib-pag-cmp:0.1.1")
         }
     }
 }
@@ -67,6 +69,43 @@ fun LoadingAnimation(bytes: ByteArray) {
         repeatCount = 0,
         scaleMode = PagScaleMode.LetterBox,
     )
+}
+```
+
+上面的示例直接接收 `bytes`。要播放本地 `.pag` 文件，把它放到
+`src/commonMain/composeResources/files/` 下，再用 Compose Multiplatform 资源 API
+（`org.jetbrains.compose.components:components-resources`）读取——这套方式在所有平台都通用：
+
+```kotlin
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import io.github.limuyang2.libpag.cmp.PagScaleMode
+import io.github.limuyang2.libpag.cmp.PagView
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+// `Res` 由 Compose resources 插件生成，包名取决于你的模块配置。
+import your.module.generated.resources.Res
+
+@OptIn(ExperimentalResourceApi::class)
+@Composable
+fun LocalAnimation() {
+    var bytes by remember { mutableStateOf<ByteArray?>(null) }
+    LaunchedEffect(Unit) {
+        bytes = Res.readBytes("files/loading.pag")
+    }
+    bytes?.let {
+        PagView(
+            bytes = it,
+            modifier = Modifier.size(160.dp),
+            scaleMode = PagScaleMode.LetterBox,
+        )
+    }
 }
 ```
 
