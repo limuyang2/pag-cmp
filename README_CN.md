@@ -35,7 +35,7 @@ repositories {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.limuyang2:lib-pag-cmp:0.1.2")
+            implementation("io.github.limuyang2:lib-pag-cmp:0.1.3")
         }
     }
 }
