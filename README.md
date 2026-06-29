@@ -116,8 +116,9 @@ fun LocalAnimation() {
 }
 ```
 
-Alternatively, pass a local file path or network URL directly with `PagView(path)`. The library
-loads it asynchronously (nothing renders until ready; a load failure is logged, not thrown):
+Alternatively, pass a local file path, Compose resource URI, or network URL directly with
+`PagView(path)`. The library loads it asynchronously (nothing renders until ready; a load failure
+is logged, not thrown):
 
 ```kotlin
 import androidx.compose.foundation.layout.size
@@ -136,10 +137,23 @@ fun RemoteAnimation(url: String) {
 }
 ```
 
-`path` accepts platform-accessible local paths and `http`/`https` URLs. For Compose resources,
-use `Res.getUri("files/name.pag")` on JVM/JS/WasmJS/iOS, or Android's `assets://` path form
-when targeting the native Android libpag loader. The bundled demo contains platform helpers for
-that mapping.
+For `.pag` files stored in `src/commonMain/composeResources/files/`, pass the URI returned by
+`Res.getUri("files/name.pag")`:
+
+```kotlin
+@Composable
+fun ResourcePathAnimation() {
+    PagView(
+        path = Res.getUri("files/loading_bmp.pag"),
+        modifier = Modifier.size(160.dp),
+        scaleMode = PagScaleMode.LetterBox,
+    )
+}
+```
+
+Do not pass the raw resource-relative path (`"files/loading_bmp.pag"`) to `PagView(path)`.
+`path` must be either a platform-accessible local path/URI from `Res.getUri(...)`, or an
+`http`/`https` URL.
 
 Network URL behavior is platform-dependent:
 
@@ -182,7 +196,7 @@ supported on Web targets yet.
 The demo app validates three loading paths:
 
 - `ByteArray`: `Res.readBytes("files/8.pag")` -> `PagView(bytes)`.
-- `Local path`: platform-specific local resource path/URI -> `PagView(path)`.
+- `Local path`: `Res.getUri("files/loading_bmp.pag")` -> `PagView(path)`.
 - `Network URL`: remote PAG URL -> `PagView(path)`.
 
 Samples are displayed in a scrollable `FlowRow`, so adding more cases only requires appending a

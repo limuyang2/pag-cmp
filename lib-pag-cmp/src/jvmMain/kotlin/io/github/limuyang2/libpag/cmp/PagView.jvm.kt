@@ -202,7 +202,7 @@ actual fun PagView(
 private suspend fun readPagPathBytes(path: String): ByteArray =
     withContext(Dispatchers.IO) {
         when {
-            path.startsWith("http://") || path.startsWith("https://") || path.startsWith("file:") || path.startsWith("jar:") -> {
+            path.isHttpUrl() || path.startsWith("file:") || path.startsWith("jar:") -> {
                 java.net.URI.create(path).toURL().openStream().use { it.readBytes() }
             }
 

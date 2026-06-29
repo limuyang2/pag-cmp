@@ -137,7 +137,7 @@ actual fun PagView(
     // PagView(bytes) DOM-canvas renderer. Loading is async; nothing renders until bytes are ready.
     var bytes by remember(path) { mutableStateOf<ByteArray?>(null) }
     LaunchedEffect(path) {
-        bytes = runCatching { WasmPagBridge.loadPathBytes(path) }.getOrElse {
+        bytes = runCatching { WasmPagBridge.loadPathBytes(pathConvert(path)) }.getOrElse {
             println("PagView: failed to load PAG from path: $path")
             null
         }

@@ -148,7 +148,7 @@ actual fun PagView(
 
     LaunchedEffect(path, pagView) {
         val view = pagView ?: return@LaunchedEffect
-        view.setPathAsync(path) { result ->
+        view.setPathAsync(pathConvert(path)) { result ->
             if (result == null) {
                 Log.w("PagView", "Failed to load PAG from path: $path")
             }

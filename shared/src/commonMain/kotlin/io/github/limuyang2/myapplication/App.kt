@@ -32,11 +32,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.limuyang2.libpag.cmp.PagView
-import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.MissingResourceException
 import pagcmp.shared.generated.resources.Res
 
-@OptIn(ExperimentalResourceApi::class)
 @Composable
 @Preview
 fun App() {
@@ -173,7 +171,7 @@ private data class PagSample(
             ),
             PagSample(
                 name = "Local path",
-                source = PagSource.LocalPath(demoLocalPagPath("files/loading_bmp.pag")),
+                source = PagSource.LocalPath(Res.getUri("files/loading_bmp.pag")),
             ),
             PagSample(
                 name = "Network URL",

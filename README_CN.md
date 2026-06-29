@@ -114,8 +114,8 @@ fun LocalAnimation() {
 }
 ```
 
-也可以直接用 `PagView(path)` 传入本地文件路径或网络 URL，库会异步加载（加载完成前不渲染；
-加载失败会记日志而非抛异常）：
+也可以直接用 `PagView(path)` 传入本地文件路径、Compose resource URI 或网络 URL，库会异步加载
+（加载完成前不渲染；加载失败会记日志而非抛异常）：
 
 ```kotlin
 import androidx.compose.foundation.layout.size
@@ -134,9 +134,22 @@ fun RemoteAnimation(url: String) {
 }
 ```
 
-`path` 支持平台可访问的本地路径，也支持 `http`/`https` 网络 URL。对于 Compose resources，
-JVM/JS/WasmJS/iOS 可以使用 `Res.getUri("files/name.pag")`；Android 如果走原生 libpag
-path loader，则使用 `assets://` 形式。当前 demo 里已经封装了这部分平台差异。
+如果 `.pag` 文件放在 `src/commonMain/composeResources/files/` 下，传入
+`Res.getUri("files/name.pag")` 返回的 URI：
+
+```kotlin
+@Composable
+fun ResourcePathAnimation() {
+    PagView(
+        path = Res.getUri("files/loading_bmp.pag"),
+        modifier = Modifier.size(160.dp),
+        scaleMode = PagScaleMode.LetterBox,
+    )
+}
+```
+
+不要把原始资源相对路径（`"files/loading_bmp.pag"`）直接传给 `PagView(path)`。`path` 必须是
+`Res.getUri(...)` 返回的平台可访问本地路径/URI，或者 `http`/`https` 网络 URL。
 
 网络 URL 的行为与平台有关：
 
@@ -177,7 +190,7 @@ JS 和 WasmJS 当前支持 `PagView(bytes)` 和 `PagView(path)`。`PagView(compo
 当前 demo 验证三种加载路径：
 
 - `ByteArray`：`Res.readBytes("files/8.pag")` -> `PagView(bytes)`。
-- `Local path`：平台特定的本地资源 path/URI -> `PagView(path)`。
+- `Local path`：`Res.getUri("files/loading_bmp.pag")` -> `PagView(path)`。
 - `Network URL`：远端 PAG URL -> `PagView(path)`。
 
 样例使用可滚动的 `FlowRow` 布局展示，后续扩展只需要在 demo 数据里继续追加新的 `PagSample`。
