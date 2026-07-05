@@ -1,11 +1,9 @@
 package io.github.limuyang2.libpag.cmp
 
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asComposeImageBitmap
-import org.jetbrains.skia.Bitmap
-import org.jetbrains.skia.ColorAlphaType
-import org.jetbrains.skia.ColorType
-import org.jetbrains.skia.ImageInfo
+import androidx.compose.ui.graphics.Paint
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -91,9 +89,9 @@ private fun loadNativeLibrariesOrThrow() {
     if (bundledNative != null) {
         // 正常消费路径：从 JVM jar 中释放 native 文件到临时目录再加载。
         if (explicitLibpagPath == null) {
-            System.load(bundledNative.libpagPath)
+            loadNativePath(bundledNative.libpagPath)
         }
-        System.load(bundledNative.bridgePath)
+        loadNativePath(bundledNative.bridgePath)
         return
     }
 
@@ -105,7 +103,14 @@ private fun loadNativeFile(path: String, propertyName: String) {
     check(file.isFile) {
         "Native library path from -D$propertyName does not exist or is not a file: ${file.path}"
     }
-    System.load(file.path)
+    loadNativePath(file.path)
+}
+
+@Suppress("UnsafeDynamicallyLoadedCode")
+private fun loadNativePath(path: String) {
+    // Bundled JVM natives are extracted from this library's own jar into a private temp directory.
+    // System.loadLibrary() cannot address these absolute files or the explicit debug paths.
+    System.load(path)
 }
 
 private data class BundledJvmNative(
@@ -167,8 +172,11 @@ private data class BundledJvmNative(
 internal class JvmPagFrameBuffer {
     private var size: PagSize? = null
     private var pixels = ByteArray(0)
-    private var bitmap: Bitmap? = null
     private var imageBitmap: ImageBitmap? = null
+    private var canvas: Canvas? = null
+    private val paint = Paint().apply {
+        isAntiAlias = false
+    }
 
     fun pixelsFor(size: PagSize): ByteArray {
         ensureAllocated(size)
@@ -177,10 +185,7 @@ internal class JvmPagFrameBuffer {
 
     fun updateImage(size: PagSize): ImageBitmap {
         ensureAllocated(size)
-        val currentBitmap = requireNotNull(bitmap)
-        check(currentBitmap.installPixels(pixels)) {
-            "Failed to install PAG pixels into Skia bitmap."
-        }
+        drawPixels(size)
         return requireNotNull(imageBitmap)
     }
 
@@ -190,20 +195,65 @@ internal class JvmPagFrameBuffer {
         // 只有尺寸变化时才重建大对象；普通帧只更新像素内容。
         size = newSize
         pixels = ByteArray(newSize.width * newSize.height * BytesPerPixel)
-        bitmap = Bitmap().apply {
-            allocPixels(
-                ImageInfo(
-                    width = newSize.width,
-                    height = newSize.height,
-                    colorType = ColorType.BGRA_8888,
-                    alphaType = ColorAlphaType.PREMUL,
-                )
-            )
+        imageBitmap = ImageBitmap(newSize.width, newSize.height)
+        canvas = Canvas(requireNotNull(imageBitmap))
+    }
+
+    private fun drawPixels(size: PagSize) {
+        val currentCanvas = requireNotNull(canvas)
+        var offset = 0
+        for (y in 0 until size.height) {
+            var runStartX = 0
+            var runColor = argbAt(offset)
+            var x = 1
+            offset += BytesPerPixel
+            while (x < size.width) {
+                val color = argbAt(offset)
+                if (color != runColor) {
+                    drawRun(currentCanvas, y, runStartX, x, runColor)
+                    runStartX = x
+                    runColor = color
+                }
+                x++
+                offset += BytesPerPixel
+            }
+            drawRun(currentCanvas, y, runStartX, size.width, runColor)
         }
-        imageBitmap = requireNotNull(bitmap).asComposeImageBitmap()
+    }
+
+    private fun drawRun(canvas: Canvas, y: Int, startX: Int, endX: Int, argb: Int) {
+        paint.color = Color(argb)
+        canvas.drawRect(
+            left = startX.toFloat(),
+            top = y.toFloat(),
+            right = endX.toFloat(),
+            bottom = (y + 1).toFloat(),
+            paint = paint,
+        )
+    }
+
+    private fun argbAt(offset: Int): Int {
+        val blue = pixels[offset].toInt() and 0xff
+        val green = pixels[offset + 1].toInt() and 0xff
+        val red = pixels[offset + 2].toInt() and 0xff
+        val alpha = pixels[offset + 3].toInt() and 0xff
+        if (alpha == 0) return 0
+        if (alpha == 255) {
+            return (alpha shl 24) or (red shl 16) or (green shl 8) or blue
+        }
+        val unpremultipliedRed = unpremultiply(red, alpha)
+        val unpremultipliedGreen = unpremultiply(green, alpha)
+        val unpremultipliedBlue = unpremultiply(blue, alpha)
+        return (alpha shl 24) or
+            (unpremultipliedRed shl 16) or
+            (unpremultipliedGreen shl 8) or
+            unpremultipliedBlue
     }
 
     private companion object {
         const val BytesPerPixel = 4
+
+        fun unpremultiply(component: Int, alpha: Int): Int =
+            ((component * 255) + (alpha / 2)) / alpha
     }
 }
