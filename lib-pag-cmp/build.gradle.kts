@@ -36,6 +36,12 @@ kotlin {
         }
         minSdk = 24
 
+        optimization {
+            consumerKeepRules.apply {
+                publish = true
+                file("consumer-rules.pro")
+            }
+        }
     }
 
     jvm()
