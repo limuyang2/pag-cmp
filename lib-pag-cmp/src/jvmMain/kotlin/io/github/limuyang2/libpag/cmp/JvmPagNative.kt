@@ -1,6 +1,7 @@
 package io.github.limuyang2.libpag.cmp
 
 import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
@@ -147,6 +148,7 @@ private data class BundledJvmNative(
             val arch = System.getProperty("os.arch").lowercase()
             return when {
                 os.contains("mac") && (arch == "aarch64" || arch == "arm64") -> "macos-arm64"
+                os.contains("mac") && (arch == "x86_64" || arch == "amd64") -> "macos-x64"
                 else -> null
             }
         }
@@ -176,6 +178,7 @@ internal class JvmPagFrameBuffer {
     private var canvas: Canvas? = null
     private val paint = Paint().apply {
         isAntiAlias = false
+        blendMode = BlendMode.Src
     }
 
     fun pixelsFor(size: PagSize): ByteArray {
