@@ -13,7 +13,7 @@ plugins {
 }
 
 val libraryGroup = "io.github.limuyang2"
-val libraryVersion = "0.1.5"
+val libraryVersion = "0.1.6"
 
 group = libraryGroup
 version = libraryVersion
