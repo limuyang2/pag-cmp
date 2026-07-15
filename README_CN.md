@@ -16,11 +16,11 @@
 | --- | --- | --- |
 | Android | 已支持 | 原生 `org.libpag.PAGView` + `AndroidView` |
 | iOS | 已支持 | 原生 `PAGView` + `UIKitView` |
-| JVM Desktop | 已支持 macOS arm64 | libpag 离屏渲染 -> 像素读取 -> Compose `ImageBitmap` |
+| JVM Desktop | 已支持 macOS arm64 和 x64 | libpag 离屏渲染 -> 像素读取 -> Compose `ImageBitmap` |
 | JS | 已支持 | libpag Web SDK canvas 集成 |
 | WasmJS | 已支持 | libpag Web SDK canvas 集成 |
 
-JVM artifact 目前只打包了 `macos-arm64` native 运行时文件。
+JVM artifact 目前打包了 `macos-arm64` 和 `macos-x64` native 运行时文件。
 Linux 和 Windows 的 JVM native 包还没有加入。
 
 ## 安装
@@ -35,7 +35,7 @@ repositories {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.limuyang2:lib-pag-cmp:0.1.3")
+            implementation("io.github.limuyang2:lib-pag-cmp:0.1.5")
         }
     }
 }

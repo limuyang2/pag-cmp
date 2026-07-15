@@ -16,11 +16,11 @@ All platform targets are built against the upstream Tencent [libpag](https://git
 | --- | --- | --- |
 | Android | Supported | Native `org.libpag.PAGView` through `AndroidView` |
 | iOS | Supported | Native `PAGView` through `UIKitView` |
-| JVM Desktop | Supported on macOS arm64 | libpag offscreen render -> pixels -> Compose `ImageBitmap` |
+| JVM Desktop | Supported on macOS arm64 and x64 | libpag offscreen render -> pixels -> Compose `ImageBitmap` |
 | JS | Supported | libpag Web SDK canvas integration |
 | WasmJS | Supported | libpag Web SDK canvas integration |
 
-The JVM artifact currently bundles native runtime files only for `macos-arm64`.
+The JVM artifact currently bundles native runtime files for `macos-arm64` and `macos-x64`.
 Linux and Windows JVM native packages are not included yet.
 
 ## Installation
@@ -35,7 +35,7 @@ repositories {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.limuyang2:lib-pag-cmp:0.1.3")
+            implementation("io.github.limuyang2:lib-pag-cmp:0.1.5")
         }
     }
 }
