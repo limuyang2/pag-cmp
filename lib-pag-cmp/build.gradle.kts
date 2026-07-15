@@ -185,12 +185,12 @@ publishing {
         pom {
             name.set("lib-pag-cmp")
             description.set("A Compose Multiplatform PAG animation library.")
-            url.set("https://github.com/limuyang2/lib-pag-cmp")
+            url.set("https://github.com/limuyang2/pag-cmp")
 
             licenses {
                 license {
-                    name.set("The Apache License, Version 2.0")
-                    url.set("https://github.com/limuyang2/lib-pag-cmp/blob/main/LICENSE")
+                    name.set("MIT License")
+                    url.set("https://github.com/limuyang2/pag-cmp/blob/main/LICENSE")
                 }
             }
 
@@ -203,9 +203,9 @@ publishing {
             }
 
             scm {
-                connection.set("scm:git@github.com:limuyang2/lib-pag-cmp.git")
-                developerConnection.set("scm:git@github.com:limuyang2/lib-pag-cmp.git")
-                url.set("https://github.com/limuyang2/lib-pag-cmp")
+                connection.set("scm:git@github.com:limuyang2/pag-cmp.git")
+                developerConnection.set("scm:git@github.com:limuyang2/pag-cmp.git")
+                url.set("https://github.com/limuyang2/pag-cmp")
             }
         }
     }
