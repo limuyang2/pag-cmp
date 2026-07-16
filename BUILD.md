@@ -24,16 +24,22 @@ lib-pag-cmp/src/jvmMain/resources/native/macos-arm64/libpag_cmp_jvm.dylib
 
 ## 单独构建 libpag
 
-本机 libpag 源码目录：
+先从 Tencent/libpag 拉取上游源码到本地目录，例如：
 
-```text
-/Users/mumu/projects/android/libpag
+```shell
+git clone https://github.com/Tencent/libpag.git /path/to/libpag
+```
+
+下面用 `LIBPAG_ROOT` 表示本地 libpag 源码目录：
+
+```shell
+export LIBPAG_ROOT=/path/to/libpag
 ```
 
 独立配置并构建 libpag：
 
 ```shell
-cmake -S /Users/mumu/projects/android/libpag \
+cmake -S "$LIBPAG_ROOT" \
   -B /private/tmp/pag-cmp-libpag-build \
   -DPAG_BUILD_SHARED=ON \
   -DPAG_USE_C=OFF \
@@ -56,7 +62,7 @@ libpag 更新后，需要用同一份 libpag 源码和产物重新构建本仓�
 ```shell
 cmake -S lib-pag-cmp/src/jvmMain/cpp \
   -B /private/tmp/pag-cmp-bridge-build \
-  -DLIBPAG_ROOT=/Users/mumu/projects/android/libpag \
+  -DLIBPAG_ROOT="$LIBPAG_ROOT" \
   -DLIBPAG_LIBRARY=/private/tmp/pag-cmp-libpag-build/libpag.framework/Versions/A/libpag \
   -DCMAKE_BUILD_TYPE=Release
 
@@ -112,4 +118,3 @@ JAVA_TOOL_OPTIONS='-Dlibpag.cmp.libpag=/private/tmp/pag-cmp-libpag-build/libpag.
 - JVM 渲染路径是 `libpag -> readPixels(BGRA) -> Skia Bitmap -> Compose ImageBitmap`。
 - native 产物采用手动构建、手动复制的方式，不随本仓库 Gradle 自动构建。
 - 暂不做 libpag 和 Skiko 的 GPU 直连。
-
