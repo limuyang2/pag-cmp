@@ -18,7 +18,7 @@ material3 = "1.11.0-alpha07"
 kotlinStdlib = "2.4.0"
 runner = "1.7.0"
 core = "1.7.0"
-libpag = "4.5.70"
+libpag = "4.5.75"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

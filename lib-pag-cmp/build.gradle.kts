@@ -80,7 +80,7 @@ kotlin {
         discoverClangModulesImplicitly = false
         swiftPackage(
             url = url("https://github.com/libpag/pag-ios.git"),
-            version = exact("4.5.70"),
+            version = exact("4.5.75"),
             products = listOf(product("libpag")),
         )
     }
