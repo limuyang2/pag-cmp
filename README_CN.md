@@ -8,7 +8,7 @@
 
 [English](./README.md)
 
-各平台实现均基于 Tencent 原版 [libpag](https://github.com/Tencent/libpag) **4.5.70** 构建。
+Android 和 iOS 目标依赖 Tencent 原版 [libpag](https://github.com/Tencent/libpag) **4.5.75**。
 
 ## 当前状态
 
@@ -35,7 +35,7 @@ repositories {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.limuyang2:lib-pag-cmp:0.1.5")
+            implementation("io.github.limuyang2:lib-pag-cmp:0.1.6")
         }
     }
 }

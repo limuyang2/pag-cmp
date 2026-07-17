@@ -8,7 +8,7 @@ It provides a common `PagView` composable and platform implementations for rende
 
 [中文说明](./README_CN.md)
 
-All platform targets are built against the upstream Tencent [libpag](https://github.com/Tencent/libpag) **4.5.70** release.
+Android and iOS targets use Tencent [libpag](https://github.com/Tencent/libpag) **4.5.75**.
 
 ## Status
 
@@ -35,7 +35,7 @@ repositories {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.limuyang2:lib-pag-cmp:0.1.5")
+            implementation("io.github.limuyang2:lib-pag-cmp:0.1.6")
         }
     }
 }
